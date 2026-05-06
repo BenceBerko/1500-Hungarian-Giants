@@ -1,0 +1,840 @@
+--SZÉKHELYEK ÖSSZESEN 3179-ből
+
+SELECT
+COUNT (DISTINCT "Szekhely") AS osszes_szekhely
+FROM "1500"."Top1500_Megye";
+
+
+--HAZAi ÖSZZ ÁRBEVÉTEL
+
+SELECT
+SUM (net_arbevetele) AS osszes_arbevetel,
+SUM (eredmeny) AS osszes_eredmeny
+FROM
+    "1500"."Top1500_Megye";
+
+
+--LEGNAGYOBB ÁRBEVÉTELŰ CÉGEK
+
+
+SELECT  "Cegnev", 
+        "Tevekenyseg",
+        "Szekhely",
+        "net_arbevetele",
+        "eredmeny"
+FROM  "1500"."Top1500_Megye"
+Order BY net_arbevetele DESC
+LIMIT 150;
+
+
+--EREDMÉNY és ÁRBEVÉTEL / SZÉKHELY
+
+
+SELECT 
+    "Szekhely", 
+    SUM ("net_arbevetele") AS osszes_arbevetel,
+    SUM ("eredmeny") AS osszes_eredmény
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Szekhely"
+ORDER BY 
+    osszes_arbevetel DESC;
+
+
+SELECT 
+    "Szekhely", 
+    SUM ("net_arbevetele") AS osszes_arbevetel,
+    SUM ("eredmeny") AS osszes_eredmeny
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Szekhely"
+ORDER BY 
+    osszes_eredmeny DESC;
+
+--IRÁNYÍTÓSZÁM / ÁRBEVÉTEL EREDMÉNY
+
+SELECT 
+    "ir.szam",
+    SUM ("net_arbevetele") AS osszes_arbevetel,
+    SUM ("eredmeny") AS osszes_eredmeny
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "ir.szam"
+ORDER BY 
+    osszes_arbevetel DESC;
+
+
+--TEVÉKENYSÉG/ÁRBEVÉTEL/Eredmény FURA ELLENŐRZÉS
+
+
+SELECT 
+    "Cégnév",
+    "Főtevékenység",
+    SUM("nettó_árbevétele") AS osszes_arbevetel,
+    SUM("eredmény") AS osszes_eredmeny,
+    (SUM("eredmény") * 100 / NULLIF(SUM("nettó_árbevétele"), 0)) AS ROS
+FROM 
+    "1500"."1500sheet"
+WHERE 
+    "Főtevékenység" = 'Adminisztratív, üzletmenetet támogató szolgáltatás'
+GROUP BY 
+    "Cégnév", 
+    "Főtevékenység"
+ORDER BY 
+    osszes_arbevetel DESC;
+
+SELECT 
+    "Cégnév",
+    "Főtevékenység",
+    SUM("nettó_árbevétele") AS osszes_arbevetel,
+    SUM("eredmény") AS osszes_eredmeny,
+    (SUM("eredmény") * 100 / NULLIF(SUM("nettó_árbevétele"), 0)) AS ROS
+FROM 
+    "1500"."1500sheet"
+WHERE 
+    "Főtevékenység" = 'M.n.s. egyéb üzletmenetet támogató szolgáltatás'
+GROUP BY 
+    "Cégnév", 
+    "Főtevékenység"
+ORDER BY 
+    osszes_arbevetel DESC;
+
+
+SELECT 
+    "Cégnév",
+    "Főtevékenység",
+    SUM("nettó_árbevétele") AS osszes_arbevetel,
+    SUM("eredmény") AS osszes_eredmeny,
+    (SUM("eredmény") * 100 / NULLIF(SUM("nettó_árbevétele"), 0)) AS ROS
+FROM 
+    "1500"."1500sheet"
+WHERE 
+    "Főtevékenység" = 'Üzletviteli, egyéb üzletvezetési tanácsadás'
+GROUP BY 
+    "Cégnév", 
+    "Főtevékenység"
+ORDER BY 
+    ROS DESC;
+
+
+SELECT 
+    "Főtevékenység",
+    "Cégnév",
+    SUM("nettó_árbevétele") AS osszes_arbevetel,
+    SUM("eredmény") AS osszes_eredmeny
+FROM 
+    "1500"."1500sheet"
+WHERE 
+    "Főtevékenység" = 'Út, autópálya építése'
+GROUP BY    "Főtevékenység",
+            "Cégnév";
+
+
+--Tevékenység / Székhely alapú rangsor ROS
+
+SELECT 
+    "Tevekenyseg", 
+    "Szekhely",
+    SUM("net_arbevetele") AS osszes_arbevetel,
+    SUM("eredmeny") AS osszes_eredmeny,
+    (SUM("eredmeny") * 100 / NULLIF(SUM("net_arbevetele"), 0)) AS ROS
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Tevekenyseg", 
+    "Szekhely"
+ORDER BY 
+    ROS DESC;
+
+
+SELECT 
+    "Tevekenyseg",
+    SUM("net_arbevetele") AS osszes_arbevetel,
+    SUM("eredmeny") AS osszes_eredmeny,
+    (SUM("eredmeny") * 100 / NULLIF(SUM("net_arbevetele"), 0)) AS ROS
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Tevekenyseg"
+ORDER BY 
+    osszes_arbevetel DESC;
+
+
+--Rangsor Húzóágazatok / Székhely
+
+SELECT 
+    "Szekhely", 
+    "Tevekenyseg",
+    COUNT(*) AS cegek_szama,
+    SUM("net_arbevetele") AS osszes_arbevetel,
+    SUM("eredmeny") AS osszes_eredmeny,
+    ROW_NUMBER() OVER (
+        PARTITION BY "Szekhely" 
+        ORDER BY SUM ("net_arbevetele") DESC
+    ) as rangsor
+FROM "1500"."Top1500_Megye"
+GROUP BY "Szekhely", "Tevekenyseg"
+ORDER BY osszes_arbevetel DESC;
+
+
+
+
+--TEVÉKENYSÉG CÉGEK SZÁMA ROS alapon
+
+
+SELECT 
+    "Tevekenyseg", 
+    COUNT(*) AS cegek_szama,
+    SUM("net_arbevetele") AS osszes_arbevetel,
+    SUM("eredmeny") AS ossz_eredmeny,
+    SUM("eredmeny") / NULLIF(SUM("net_arbevetele"), 0) * 100 AS ROS
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Tevekenyseg"
+ORDER BY
+ROS DESC;
+
+
+___________________________________________
+
+
+
+SELECT 
+    "Tevekenyseg", 
+    "Varmegye",
+    SUM("net_arbevetele") AS osszes_arbevetel,
+    SUM("eredmeny") AS osszes_eredmeny
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Tevekenyseg", 
+    "Varmegye"
+ORDER BY 
+    osszes_eredmeny DESC;
+
+--Tevékenység/Vármegye ROS
+
+SELECT 
+    "Varmegye",
+    "Tevekenyseg",
+    SUM("net_arbevetele") AS osszes_arbevetel,
+    SUM("eredmeny") AS osszes_eredmeny,
+    CASE 
+        WHEN SUM("net_arbevetele") = 0 THEN 0 
+        ELSE ROUND(
+            (SUM("eredmeny")::float / NULLIF(SUM("net_arbevetele"), 0)::float * 100)::numeric, 4
+        )
+    END AS profit_marzs_szazalek
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Varmegye", "Tevekenyseg"
+ORDER BY 
+    profit_marzs_szazalek DESC;
+
+
+--Qvartilis ellenőrzése Vármegye/Árbevétel
+
+
+
+SELECT 
+    "Varmegye",
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "net_arbevetele") AS median_arbevetel
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Varmegye"
+ORDER BY 
+    median_arbevetel DESC;
+
+
+SELECT 
+    "Varmegye", 
+    "Cegnev", 
+    "net_arbevetele"
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    "Varmegye" = 'Vas'
+ORDER BY 
+    "net_arbevetele" DESC;
+
+--Legnagyobb árbevételt termelő tevékenység / Vármegye 
+
+WITH RangsoroltArbevetel AS (
+    SELECT 
+        "Varmegye", 
+        "Tevekenyseg",
+        SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+        DENSE_RANK() OVER (
+            PARTITION BY "Varmegye" 
+            ORDER BY SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) DESC
+        ) as rangsor
+    FROM 
+        "1500"."Top1500_Megye"
+    GROUP BY 
+        "Varmegye", 
+        "Tevekenyseg"
+)
+SELECT 
+    "Varmegye", 
+    "Tevekenyseg", 
+    osszes_arbevetel
+FROM 
+    RangsoroltArbevetel
+    WHERE 
+    rangsor <= 5
+ORDER BY 
+    "Varmegye" ASC, 
+    osszes_arbevetel DESC;
+
+--Legnagyobb árbevételt termelő tevékenység / 1 db kiválasztott Vármegye 
+
+WITH RangsoroltArbevetel AS (
+    SELECT 
+        "Varmegye", 
+        "Tevekenyseg",
+        SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+        DENSE_RANK() OVER (
+            ORDER BY SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) DESC
+        ) as rangsor
+    FROM 
+        "1500"."Top1500_Megye"
+    WHERE 
+        "Varmegye" = 'Nógrád' -- Itt szűrünk rá Nógrád megyére
+    GROUP BY 
+        "Varmegye", 
+        "Tevekenyseg"
+)
+SELECT 
+    "Varmegye", 
+    "Tevekenyseg", 
+    osszes_arbevetel
+FROM 
+    RangsoroltArbevetel
+WHERE 
+    rangsor <= 5
+ORDER BY 
+    osszes_arbevetel DESC;
+
+
+___________________________________________Vármegye ROS JÓ
+
+
+
+
+SELECT 
+    t1500."Varmegye",
+    COUNT(t1500."Cegnev") AS cegek_szama,
+    SUM(CAST(REPLACE(t1500."net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE(t1500."eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny,
+    CASE 
+        WHEN SUM(CAST(REPLACE(t1500."net_arbevetele"::text, ' ', '') AS BIGINT)) = 0 THEN 0 
+        ELSE ROUND(
+            (SUM(CAST(REPLACE(t1500."eredmeny"::text, ' ', '') AS BIGINT))::float / 
+             SUM(CAST(REPLACE(t1500."net_arbevetele"::text, ' ', '') AS BIGINT)) * 100)::numeric, 2)
+    END AS profit_marzs,
+    MAX(s."SUM2024") AS megyei_nepesseg,
+    SUM(CAST(REPLACE(t1500."Lakasok_szama"::text, ' ', '') AS BIGINT)) AS megyei_lakas,
+    CASE 
+        WHEN MAX(s."SUM2024") = 0 OR MAX(s."SUM2024") IS NULL THEN 0 
+        ELSE ROUND((SUM(CAST(REPLACE(t1500."eredmeny"::text, ' ', '') AS BIGINT))::float / 
+             MAX(s."SUM2024"))::numeric, 0)
+    END AS profit_per_lakos,
+    CASE 
+        WHEN MAX(CAST(REPLACE(t1500."Lakasok_szama"::text, ' ', '') AS BIGINT)) = 0 THEN 0 
+        ELSE ROUND((SUM(CAST(REPLACE(t1500."eredmeny"::text, ' ', '') AS BIGINT))::float / 
+             MAX(CAST(REPLACE(t1500."Lakasok_szama"::text, ' ', '') AS BIGINT)))::numeric, 0)
+    END AS profit_per_lakas
+FROM 
+    "1500"."Top1500_Megye" AS t1500
+LEFT JOIN 
+    "1500"."stadat-nepessegFNO-hu" AS s ON t1500."Varmegye" = s."Varmegye"
+GROUP BY 
+    t1500."Varmegye"
+ORDER BY 
+    profit_marzs DESC;
+
+___________________________________________Helység ROS profitperlakos
+
+SELECT 
+    "Helyseg",
+    COUNT ("Cegnev") AS cegek_szama,
+    SUM(
+        CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)
+    ) AS osszes_arbevetel,
+    SUM(
+        CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)
+    ) AS osszes_eredmeny,
+    CASE 
+        WHEN SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) = 0 THEN 0 
+        ELSE ROUND((SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+             SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT))*100)::numeric,2)
+    END AS profit_marzs_szazalek,
+    "Nepesseg",
+        CASE 
+        WHEN MAX(CAST(REPLACE("Nepesseg"::text, ' ', '') AS BIGINT)) = 0 THEN 0 
+        ELSE ROUND((SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+             MAX(CAST(REPLACE("Nepesseg"::text, ' ', '') AS BIGINT)))::numeric,0)
+    END AS profit_per_lakos
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Helyseg",
+    "Nepesseg"
+ORDER BY 
+    profit_per_lakos DESC;
+
+___________________________________________Helység ROS Profitmarzs
+
+SELECT 
+    "Helyseg",
+    COUNT ("Cegnev") AS cegek_szama,
+    SUM(
+        CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)
+    ) AS osszes_arbevetel,
+    SUM(
+        CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)
+    ) AS osszes_eredmeny,
+    CASE 
+        WHEN SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) = 0 THEN 0 
+        ELSE ROUND((SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+             SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT))*100)::numeric,2)
+    END AS profit_marzs_szazalek,
+    "Nepesseg",
+        CASE 
+        WHEN MAX(CAST(REPLACE("Nepesseg"::text, ' ', '') AS BIGINT)) = 0 THEN 0 
+        ELSE ROUND((SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+             MAX(CAST(REPLACE("Nepesseg"::text, ' ', '') AS BIGINT)))::numeric,0)
+    END AS profit_per_lakos
+FROM 
+    "1500"."Top1500_Megye"
+GROUP BY 
+    "Helyseg",
+    "Nepesseg"
+ORDER BY 
+    profit_marzs_szazalek DESC;
+
+
+___________________________________________
+
+
+SELECT "Adószám", "Cégnév", "eredmény", "nettó_árbevétele"
+FROM "1500"."1500sheet"
+WHERE "Adószám" LIKE '________-2-__'
+ORDER BY "eredmény";
+
+
+SELECT "Adószám", "Cégnév", "eredmény", "nettó_árbevétele"
+FROM "1500"."1500sheet"
+WHERE "Adószám" LIKE '________-2-__'
+ORDER BY "nettó_árbevétele";
+
+
+___________________________________________
+
+SELECT "Adószám", "Cégnév", "eredmény", "nettó_árbevétele"
+FROM "1500"."1500sheet"
+WHERE "Adószám" LIKE '________-_-2'
+ORDER BY "nettó_árbevétele";
+
+SELECT "Adószám", "Cégnév", "eredmény", "nettó_árbevétele"
+FROM "1500"."1500sheet"
+WHERE "Adószám" LIKE '%02' OR "Adószám" LIKE '%22' 
+ORDER BY "nettó_árbevétele";
+
+___________________________________________ÁLLAMI_TULAJDON
+
+
+SELECT 
+    "Cégnév",
+    "nettó_árbevétele",
+    "eredmény",
+    "Tulajdonos"
+FROM 
+    "1500"."1500sheet"
+WHERE 
+    "Tulajdonos" LIKE '%Magyar Állam%' 
+ORDER BY 
+    CAST(REPLACE("nettó_árbevétele"::text, ' ', '') AS BIGINT) DESC;
+
+
+
+SELECT
+ SUM(CAST(REPLACE("nettó_árbevétele"::text, ' ', '') AS BIGINT)) AS "Össz árbevétel (eFt)"
+FROM 
+    "1500"."1500sheet"
+WHERE 
+    "Tulajdonos" LIKE '%Magyar Állam%';
+
+________________________________________________________
+
+
+SELECT 
+    CASE 
+        WHEN RIGHT("Adószám", 2) IN ('02', '22') THEN 'Baranya'
+        WHEN RIGHT("Adószám", 2) IN ('03', '23') THEN 'Bács-Kiskun'
+        WHEN RIGHT("Adószám", 2) IN ('04', '24') THEN 'Békés'
+        WHEN RIGHT("Adószám", 2) IN ('05', '25') THEN 'Borsod-Abaúj-Zemplén'
+        WHEN RIGHT("Adószám", 2) IN ('06', '26') THEN 'Csongrád-Csanád'
+        WHEN RIGHT("Adószám", 2) IN ('07', '27') THEN 'Fejér'
+        WHEN RIGHT("Adószám", 2) IN ('08', '28') THEN 'Győr-Moson-Sopron'
+        WHEN RIGHT("Adószám", 2) IN ('09', '29') THEN 'Hajdú-Bihar'
+        WHEN RIGHT("Adószám", 2) IN ('10', '30') THEN 'Heves'
+        WHEN RIGHT("Adószám", 2) IN ('11', '31') THEN 'Komárom-Esztergom'
+        WHEN RIGHT("Adószám", 2) IN ('12', '32') THEN 'Nógrád'
+        WHEN RIGHT("Adószám", 2) IN ('13', '33') THEN 'Pest'
+        WHEN RIGHT("Adószám", 2) IN ('14', '34') THEN 'Somogy'
+        WHEN RIGHT("Adószám", 2) IN ('15', '35') THEN 'Szabolcs-Szatmár-Bereg'
+        WHEN RIGHT("Adószám", 2) IN ('16', '36') THEN 'Jász-Nagykun-Szolnok'
+        WHEN RIGHT("Adószám", 2) IN ('17', '37') THEN 'Tolna'
+        WHEN RIGHT("Adószám", 2) IN ('18', '38') THEN 'Vas'
+        WHEN RIGHT("Adószám", 2) IN ('19', '39') THEN 'Veszprém'
+        WHEN RIGHT("Adószám", 2) IN ('20', '40') THEN 'Zala'
+        WHEN RIGHT("Adószám", 2) = '41' THEN 'Észak-Budapest'
+        WHEN RIGHT("Adószám", 2) = '42' THEN 'Kelet-Budapest'
+        WHEN RIGHT("Adószám", 2) = '43' THEN 'Dél-Budapest'
+        WHEN RIGHT("Adószám", 2) = '44' THEN 'Kiemelt Adózók Adóigazgatósága'
+        WHEN RIGHT("Adószám", 2) = '51' THEN 'Kiemelt Ügyek Adóigazgatósága'
+        ELSE 'Ismeretlen/Külföldi'
+    END AS "Megye/Igazgatóság",
+    COUNT(*) AS "Cégek száma",
+    SUM(CAST(REPLACE("nettó_árbevétele"::text, ' ', '') AS BIGINT)) AS "Össz árbevétel (eFt)"
+FROM 
+    "1500"."1500sheet"
+GROUP BY 
+    1
+ORDER BY 
+    "Össz árbevétel (eFt)" DESC;
+
+__________________________________
+
+SELECT 
+    CASE 
+        WHEN RIGHT("Adószám", 2) IN ('02', '22') THEN 'Baranya'
+        WHEN RIGHT("Adószám", 2) IN ('03', '23') THEN 'Bács-Kiskun'
+        WHEN RIGHT("Adószám", 2) IN ('04', '24') THEN 'Békés'
+        WHEN RIGHT("Adószám", 2) IN ('05', '25') THEN 'Borsod-Abaúj-Zemplén'
+        WHEN RIGHT("Adószám", 2) IN ('06', '26') THEN 'Csongrád-Csanád'
+        WHEN RIGHT("Adószám", 2) IN ('07', '27') THEN 'Fejér'
+        WHEN RIGHT("Adószám", 2) IN ('08', '28') THEN 'Győr-Moson-Sopron'
+        WHEN RIGHT("Adószám", 2) IN ('09', '29') THEN 'Hajdú-Bihar'
+        WHEN RIGHT("Adószám", 2) IN ('10', '30') THEN 'Heves'
+        WHEN RIGHT("Adószám", 2) IN ('11', '31') THEN 'Komárom-Esztergom'
+        WHEN RIGHT("Adószám", 2) IN ('12', '32') THEN 'Nógrád'
+        WHEN RIGHT("Adószám", 2) IN ('13', '33') THEN 'Pest'
+        WHEN RIGHT("Adószám", 2) IN ('14', '34') THEN 'Somogy'
+        WHEN RIGHT("Adószám", 2) IN ('15', '35') THEN 'Szabolcs-Szatmár-Bereg'
+        WHEN RIGHT("Adószám", 2) IN ('16', '36') THEN 'Jász-Nagykun-Szolnok'
+        WHEN RIGHT("Adószám", 2) IN ('17', '37') THEN 'Tolna'
+        WHEN RIGHT("Adószám", 2) IN ('18', '38') THEN 'Vas'
+        WHEN RIGHT("Adószám", 2) IN ('19', '39') THEN 'Veszprém'
+        WHEN RIGHT("Adószám", 2) IN ('20', '40') THEN 'Zala'
+        WHEN RIGHT("Adószám", 2) = '41' THEN 'Észak-Budapest'
+        WHEN RIGHT("Adószám", 2) = '42' THEN 'Kelet-Budapest'
+        WHEN RIGHT("Adószám", 2) = '43' THEN 'Dél-Budapest'
+        WHEN RIGHT("Adószám", 2) = '44' THEN 'Kiemelt Adózók Adóigazgatósága'
+        WHEN RIGHT("Adószám", 2) = '51' THEN 'Kiemelt Ügyek Adóigazgatósága'
+        ELSE 'Ismeretlen/Külföldi'
+    END AS "Megye/Igazgatóság",
+    COUNT(*) AS "Cégek száma",
+    SUM(CAST(REPLACE("nettó_árbevétele"::text, ' ', '') AS BIGINT)) AS "Össz árbevétel",
+    -- Új oszlop: Átlagos árbevétel cégenként
+    ROUND(
+        SUM(CAST(REPLACE("nettó_árbevétele"::text, ' ', '') AS BIGINT)) / COUNT(*), 
+        0
+    ) AS "Átlagos árbevétel/cég"
+FROM 
+    "1500"."1500sheet"
+GROUP BY 
+    1
+ORDER BY 
+    "Átlagos árbevétel/cég" DESC;
+
+
+_________________________________________
+
+
+SELECT 
+    CASE 
+        WHEN RIGHT("Adószám", 2) IN ('02', '22') THEN 'Baranya'
+        WHEN RIGHT("Adószám", 2) IN ('03', '23') THEN 'Bács-Kiskun'
+        WHEN RIGHT("Adószám", 2) IN ('04', '24') THEN 'Békés'
+        WHEN RIGHT("Adószám", 2) IN ('05', '25') THEN 'Borsod-Abaúj-Zemplén'
+        WHEN RIGHT("Adószám", 2) IN ('06', '26') THEN 'Csongrád-Csanád'
+        WHEN RIGHT("Adószám", 2) IN ('07', '27') THEN 'Fejér'
+        WHEN RIGHT("Adószám", 2) IN ('08', '28') THEN 'Győr-Moson-Sopron'
+        WHEN RIGHT("Adószám", 2) IN ('09', '29') THEN 'Hajdú-Bihar'
+        WHEN RIGHT("Adószám", 2) IN ('10', '30') THEN 'Heves'
+        WHEN RIGHT("Adószám", 2) IN ('11', '31') THEN 'Komárom-Esztergom'
+        WHEN RIGHT("Adószám", 2) IN ('12', '32') THEN 'Nógrád'
+        WHEN RIGHT("Adószám", 2) IN ('13', '33') THEN 'Pest'
+        WHEN RIGHT("Adószám", 2) IN ('14', '34') THEN 'Somogy'
+        WHEN RIGHT("Adószám", 2) IN ('15', '35') THEN 'Szabolcs-Szatmár-Bereg'
+        WHEN RIGHT("Adószám", 2) IN ('16', '36') THEN 'Jász-Nagykun-Szolnok'
+        WHEN RIGHT("Adószám", 2) IN ('17', '37') THEN 'Tolna'
+        WHEN RIGHT("Adószám", 2) IN ('18', '38') THEN 'Vas'
+        WHEN RIGHT("Adószám", 2) IN ('19', '39') THEN 'Veszprém'
+        WHEN RIGHT("Adószám", 2) IN ('20', '40') THEN 'Zala'
+        WHEN RIGHT("Adószám", 2) = '41' THEN 'Észak-Budapest'
+        WHEN RIGHT("Adószám", 2) = '42' THEN 'Kelet-Budapest'
+        WHEN RIGHT("Adószám", 2) = '43' THEN 'Dél-Budapest'
+        WHEN RIGHT("Adószám", 2) = '44' THEN 'Kiemelt Adózók Adóigazgatósága'
+        WHEN RIGHT("Adószám", 2) = '51' THEN 'Kiemelt Ügyek Adóigazgatósága'
+        ELSE 'Ismeretlen/Külföldi'
+    END AS "Megye/Igazgatóság",
+    COUNT(*) AS "Cégek száma",
+    SUM(CAST(REPLACE("eredmény"::text, ' ', '') AS BIGINT)) AS "Eredmény",
+    ROUND(
+        SUM(CAST(REPLACE("eredmény"::text, ' ', '') AS BIGINT)) / COUNT(*), 
+        0
+    ) AS "Átlagos eredmény/cég"
+FROM 
+    "1500"."1500sheet"
+GROUP BY 
+    1
+ORDER BY 
+    "Átlagos eredmény/cég" DESC;
+
+
+
+_______________________________
+
+
+--Tevkenységi csoportok szerinti szétválasztás--
+
+--Pénzpiac
+
+SELECT 
+    SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny,
+    ROUND(
+        (SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+         NULLIF(SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)), 0) * 100)::numeric, 
+        2
+    ) AS ROS_szazalek
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    "Tevekenyseg" IN (
+        'Pénz-, tőkepiac igazgatása',
+        'Pénzügyi lízing',
+        'Egyéb pénzügyi kiegészítő tevékenység',
+        'M.n.s. egyéb pénzügyi közvetítés',
+        'Nem életbiztosítás',
+        'Életbiztosítás',
+        'Biztosítási ügynöki, brókeri tevékenység',
+        'Egyéb monetáris közvetítés'
+    );
+
+
+
+--Autóipar--
+SELECT 
+    SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny,
+    ROUND(
+        (SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+         NULLIF(SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)), 0) * 100)::numeric, 
+        2
+    ) AS ROS_szazalek
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    "Tevekenyseg" IN (
+        'Közúti gépjármű gyártása',
+        'Motor, turbina gyártása (kivéve légi-, közútijármű-motor)',
+        'Egyéb gépjárműalkatrész és -tartozék gyártása',
+        'Gépjárművillamossági, -elektronikai készülékek gyártása',
+        'Gépjármű-karosszéria, pótkocsi gyártása'
+    );
+
+
+--Elektronikai gyártás
+
+SELECT 
+    SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny,
+    ROUND(
+        (SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+         NULLIF(SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)), 0) * 100)::numeric, 
+        2
+    ) AS ROS_szazalek
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    "Tevekenyseg" IN (
+        'Elektronikai alkatrész gyártása',
+        'Elektronikai áramköri kártya gyártása',
+        'Elektronikus fogyasztási cikk gyártása'
+        'Egyéb elektronikus, villamos vezeték, kábel gyártása',
+        'Elektronikus orvosi berendezés gyártása'
+        );    
+    
+
+--Gyógyászat
+
+SELECT 
+    SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny,
+    ROUND(
+        (SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+         NULLIF(SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)), 0) * 100)::numeric, 
+        2
+    ) AS ROS_szazalek
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    "Tevekenyseg" IN (
+        'Gyógyszerkészítmény gyártása',
+        'Gyógyszer, gyógyászati termék nagykereskedelme'
+        );
+
+
+
+--Gáz-Olaj
+
+SELECT 
+    SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny,
+    ROUND(
+        (SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+         NULLIF(SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)), 0) * 100)::numeric, 
+        2
+    ) AS ROS_szazalek
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    "Tevekenyseg" IN (
+        'Gázkereskedelem',
+        'Ipari gáz gyártása',
+        'Gázelosztás',
+        'Földgázkitermelés'
+        'Kőolaj-, földgázkitermelési szolgáltatás',
+        'Gáztárolás hálózati ellátási szolgáltatás részeként',
+        'Kőolaj-feldolgozás, fosszilis tüzelőanyag-termékek gyártása',
+        'Olaj gyártása',
+        'Kőolaj-, földgázkitermelési szolgáltatás',
+        'Kőolaj-kitermelés'
+        );
+
+
+--Minden mindennek a mindene
+
+
+
+SELECT 
+    "Tevekenyseg",
+    SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny,
+    ROUND(
+        (SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT))::float / 
+         NULLIF(SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)), 0) * 100)::numeric, 
+        2
+    ) AS ROS_szazalek
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    "Tevekenyseg" IN (
+        'Pénz-, tőkepiac igazgatása',
+        'Pénzügyi lízing',
+        'Egyéb pénzügyi kiegészítő tevékenység',
+        'M.n.s. egyéb pénzügyi közvetítés',
+        'Nem életbiztosítás',
+        'Életbiztosítás',
+        'Biztosítási ügynöki, brókeri tevékenység',
+        'Egyéb monetáris közvetítés',
+        'Közúti gépjármű gyártása',
+        'Motor, turbina gyártása (kivéve légi-, közútijármű-motor)',
+        'Egyéb gépjárműalkatrész és -tartozék gyártása',
+        'Gépjárművillamossági, -elektronikai készülékek gyártása',
+        'Gépjármű-karosszéria, pótkocsi gyártása',
+        'Elektronikai alkatrész gyártása',
+        'Elektronikai áramköri kártya gyártása',
+        'Elektronikus fogyasztási cikk gyártása',
+        'Egyéb elektronikus, villamos vezeték, kábel gyártása',
+        'Elektronikus orvosi berendezés gyártása',
+        'Gyógyszerkészítmény gyártása',
+        'Gyógyszer, gyógyászati termék nagykereskedelme',
+        'Gázkereskedelem',
+        'Ipari gáz gyártása',
+        'Gázelosztás',
+        'Földgázkitermelés',
+        'Kőolaj-, földgázkitermelési szolgáltatás',
+        'Gáztárolás hálózati ellátási szolgáltatás részeként',
+        'Kőolaj-feldolgozás, fosszilis tüzelőanyag-termékek gyártása',
+        'Olaj gyártása',
+        'Kőolaj-kitermelés'
+    )
+GROUP BY 
+    "Tevekenyseg"
+ORDER BY 
+    CASE "Tevekenyseg"
+        WHEN 'Pénz-, tőkepiac igazgatása' THEN 1
+        WHEN 'Pénzügyi lízing' THEN 2
+        WHEN 'Egyéb pénzügyi kiegészítő tevékenység' THEN 3
+        WHEN 'M.n.s. egyéb pénzügyi közvetítés' THEN 4
+        WHEN 'Nem életbiztosítás' THEN 5
+        WHEN 'Életbiztosítás' THEN 6
+        WHEN 'Biztosítási ügynöki, brókeri tevékenység' THEN 7
+        WHEN 'Egyéb monetáris közvetítés' THEN 8
+        WHEN 'Közúti gépjármű gyártása' THEN 9
+        WHEN 'Motor, turbina gyártása (kivéve légi-, közútijármű-motor)' THEN 10
+        WHEN 'Egyéb gépjárműalkatrész és -tartozék gyártása' THEN 11
+        WHEN 'Gépjárművillamossági, -elektronikai készülékek gyártása' THEN 12
+        WHEN 'Gépjármű-karosszéria, pótkocsi gyártása' THEN 13
+        WHEN 'Elektronikai alkatrész gyártása' THEN 14
+        WHEN 'Elektronikai áramköri kártya gyártása' THEN 15
+        WHEN 'Elektronikus fogyasztási cikk gyártása' THEN 16
+        WHEN 'Egyéb elektronikus, villamos vezeték, kábel gyártása' THEN 17
+        WHEN 'Elektronikus orvosi berendezés gyártása' THEN 18
+        WHEN 'Gyógyszerkészítmény gyártása' THEN 19
+        WHEN 'Gyógyszer, gyógyászati termék nagykereskedelme' THEN 20
+        WHEN 'Gázkereskedelem' THEN 21
+        WHEN 'Ipari gáz gyártása' THEN 22
+        WHEN 'Gázelosztás' THEN 23
+        WHEN 'Földgázkitermelés' THEN 24
+        WHEN 'Kőolaj-, földgázkitermelési szolgáltatás' THEN 25
+        WHEN 'Gáztárolás hálózati ellátási szolgáltatás részeként' THEN 26
+        WHEN 'Kőolaj-feldolgozás, fosszilis tüzelőanyag-termékek gyártása' THEN 27
+        WHEN 'Olaj gyártása' THEN 28
+        WHEN 'Kőolaj-kitermelés' THEN 29
+    END;
+
+
+--Vármegyék szerinti Tevékenységcsoportok
+
+SELECT 
+    "Varmegye",
+    CASE 
+        WHEN "Tevekenyseg" IN ('Pénz-, tőkepiac igazgatása', 'Pénzügyi lízing', 'Egyéb pénzügyi kiegészítő tevékenység', 'M.n.s. egyéb pénzügyi közvetítés', 'Nem életbiztosítás', 'Életbiztosítás', 'Biztosítási ügynöki, brókeri tevékenység', 'Egyéb monetáris közvetítés') THEN 'Pénzpiac'
+        WHEN "Tevekenyseg" IN ('Közúti gépjármű gyártása', 'Motor, turbina gyártása (kivéve légi-, közútijármű-motor)', 'Egyéb gépjárműalkatrész és -tartozék gyártása', 'Gépjárművillamossági, -elektronikai készülékek gyártása', 'Gépjármű-karosszéria, pótkocsi gyártása') THEN 'Autóipar'
+        WHEN "Tevekenyseg" IN ('Elektronikai alkatrész gyártása', 'Elektronikai áramköri kártya gyártása', 'Elektronikus fogyasztási cikk gyártása', 'Egyéb elektronikus, villamos vezeték, kábel gyártása', 'Elektronikus orvosi berendezés gyártása') THEN 'Elektronikai gyártás'
+        WHEN "Tevekenyseg" IN ('Gyógyszerkészítmény gyártása', 'Gyógyszer, gyógyászati termék nagykereskedelme') THEN 'Gyógyszeripar'
+        WHEN "Tevekenyseg" IN ('Gázkereskedelem', 'Ipari gáz gyártása', 'Gázelosztás', 'Földgázkitermelés', 'Kőolaj-, földgázkitermelési szolgáltatás', 'Gáztárolás hálózati ellátási szolgáltatás részeként', 'Kőolaj-feldolgozás, fosszilis tüzelőanyag-termékek gyártása', 'Olaj gyártása', 'Kőolaj-kitermelés') THEN 'Gáz-Olajipar'
+    END AS iparag_csoport,
+    SUM(CAST(REPLACE("net_arbevetele"::text, ' ', '') AS BIGINT)) AS osszes_arbevetel,
+    SUM(CAST(REPLACE("eredmeny"::text, ' ', '') AS BIGINT)) AS osszes_eredmeny
+FROM 
+    "1500"."Top1500_Megye"
+WHERE 
+    -- Csak azokat tartjuk meg, amik a felsorolt listákban szerepelnek
+    "Tevekenyseg" IN (
+        'Pénz-, tőkepiac igazgatása', 'Pénzügyi lízing', 'Egyéb pénzügyi kiegészítő tevékenység', 'M.n.s. egyéb pénzügyi közvetítés', 'Nem életbiztosítás', 'Életbiztosítás', 'Biztosítási ügynöki, brókeri tevékenység', 'Egyéb monetáris közvetítés',
+        'Közúti gépjármű gyártása', 'Motor, turbina gyártása (kivéve légi-, közútijármű-motor)', 'Egyéb gépjárműalkatrész és -tartozék gyártása', 'Gépjárművillamossági, -elektronikai készülékek gyártása', 'Gépjármű-karosszéria, pótkocsi gyártása',
+        'Elektronikai alkatrész gyártása', 'Elektronikai áramköri kártya gyártása', 'Elektronikus fogyasztási cikk gyártása', 'Egyéb elektronikus, villamos vezeték, kábel gyártása', 'Elektronikus orvosi berendezés gyártása',
+        'Gyógyszerkészítmény gyártása', 'Gyógyszer, gyógyászati termék nagykereskedelme',
+        'Gázkereskedelem', 'Ipari gáz gyártása', 'Gázelosztás', 'Földgázkitermelés', 'Kőolaj-, földgázkitermelési szolgáltatás', 'Gáztárolás hálózati ellátási szolgáltatás részeként', 'Kőolaj-feldolgozás, fosszilis tüzelőanyag-termékek gyártása', 'Olaj gyártása', 'Kőolaj-kitermelés'
+    )
+GROUP BY 
+    "Varmegye", 
+    iparag_csoport
+ORDER BY 
+    "Varmegye" ASC, 
+    osszes_arbevetel DESC;
+
+
