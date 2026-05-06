@@ -822,7 +822,6 @@ SELECT
 FROM 
     "1500"."Top1500_Megye"
 WHERE 
-    -- Csak azokat tartjuk meg, amik a felsorolt listákban szerepelnek
     "Tevekenyseg" IN (
         'Pénz-, tőkepiac igazgatása', 'Pénzügyi lízing', 'Egyéb pénzügyi kiegészítő tevékenység', 'M.n.s. egyéb pénzügyi közvetítés', 'Nem életbiztosítás', 'Életbiztosítás', 'Biztosítási ügynöki, brókeri tevékenység', 'Egyéb monetáris közvetítés',
         'Közúti gépjármű gyártása', 'Motor, turbina gyártása (kivéve légi-, közútijármű-motor)', 'Egyéb gépjárműalkatrész és -tartozék gyártása', 'Gépjárművillamossági, -elektronikai készülékek gyártása', 'Gépjármű-karosszéria, pótkocsi gyártása',
